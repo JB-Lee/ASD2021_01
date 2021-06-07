@@ -10,9 +10,7 @@ class BaseModel(pl.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.transform = transform
-
-    def cross_entropy_loss(self, logits, labels):
-        return F.cross_entropy(logits, labels)
+        self.criterion = nn.NLLLoss()
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=1e-03, weight_decay=0.01)
@@ -25,7 +23,7 @@ class BaseModel(pl.LightningModule):
             x = self.transform(x)
 
         z = self.forward(x)
-        loss = self.cross_entropy_loss(z, y)
+        loss = self.criterion(z, y)
 
         pred = torch.argmax(z, dim=1)
         acc = accuracy(pred, y)
@@ -37,7 +35,7 @@ class BaseModel(pl.LightningModule):
     def validation_step(self, val_batch, batch_idx):
         x, y = val_batch
         z = self.forward(x)
-        loss = self.cross_entropy_loss(z, y)
+        loss = self.criterion(z, y)
 
         pred = torch.argmax(z, dim=1)
         acc = accuracy(pred, y)
