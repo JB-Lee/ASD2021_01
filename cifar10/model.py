@@ -46,8 +46,8 @@ class BaseModel(pl.LightningModule):
 
 
 class MLPCifar10(BaseModel):
-    def __init__(self, hidden_size, hidden_cnt, dropout=0.3):
-        super().__init__()
+    def __init__(self, hidden_size, hidden_cnt, dropout=0.3, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.hidden_size = hidden_size
         self.hidden_cnt = hidden_cnt
@@ -130,8 +130,8 @@ class CNNCifar10(BaseModel):
 
 
 class DCNNCifar10(BaseModel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.example_input_array = torch.rand(1, 3, 32, 32)
 
         self.conv1 = nn.Sequential(
@@ -239,8 +239,8 @@ class ResCifar10(BaseModel):
             out = self.relu(out)
             return out
 
-    def __init__(self, num_blocks, num_classes=10, in_channels=16):
-        super().__init__()
+    def __init__(self, num_blocks, num_classes=10, in_channels=16, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.in_channels = in_channels
 
@@ -286,8 +286,8 @@ class ResCifar10(BaseModel):
 
 
 class ResV2Cifar10(ResCifar10):
-    def __init__(self, num_blocks, num_classes=10, in_channels=16):
-        super().__init__(num_blocks, num_classes, in_channels)
+    def __init__(self, num_blocks, num_classes=10, in_channels=16, *args, **kwargs):
+        super().__init__(num_blocks, num_classes, in_channels, *args, **kwargs)
 
         self.dropout = nn.Dropout2d(0.3)
 
