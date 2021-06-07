@@ -6,14 +6,15 @@ from torch.functional import F
 
 
 class BaseModel(pl.LightningModule):
-    def __init__(self, transform=None, *args, **kwargs):
+    def __init__(self, transform=None, learning_rate=1e-03, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.transform = transform
         self.criterion = nn.NLLLoss()
+        self.learning_rate = learning_rate
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-03, weight_decay=0.01)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
