@@ -6,6 +6,11 @@ from torch.functional import F
 
 
 class BaseModel(pl.LightningModule):
+    def __init__(self, transform=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.transform = transform
+
     def cross_entropy_loss(self, logits, labels):
         return F.cross_entropy(logits, labels)
 
@@ -15,6 +20,10 @@ class BaseModel(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
+
+        if self.transform:
+            x = self.transform(x)
+
         z = self.forward(x)
         loss = self.cross_entropy_loss(z, y)
 
