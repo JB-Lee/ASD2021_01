@@ -9,6 +9,8 @@ class BaseModel(pl.LightningModule):
     def __init__(self, transform=None, learning_rate=1e-03, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.example_input_array = torch.rand(1, 3, 32, 32)
+
         self.transform = transform
         self.criterion = nn.NLLLoss()
         self.learning_rate = learning_rate
@@ -74,16 +76,16 @@ class BaseModel(pl.LightningModule):
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
 
-        self.logger.experiment.add_scalar('Loss/Train', avg_loss, self.current_epoch)
-        self.logger.experiment.add_scalar('Accuracy/Train', correct / total, self.current_epoch)
+        self.logger.experiment.add_scalar('Epoch/Loss/Train', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Epoch/Accuracy/Train', correct / total, self.current_epoch)
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
 
-        self.logger.experiment.add_scalar('Loss/Validation', avg_loss, self.current_epoch)
-        self.logger.experiment.add_scalar('Accuracy/Validation', correct / total, self.current_epoch)
+        self.logger.experiment.add_scalar('Epoch/Loss/Validation', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Epoch/Accuracy/Validation', correct / total, self.current_epoch)
 
 
 class MLPCifar10(BaseModel):
@@ -93,8 +95,6 @@ class MLPCifar10(BaseModel):
         self.hidden_size = hidden_size
         self.hidden_cnt = hidden_cnt
         self.dropout = dropout
-
-        self.example_input_array = torch.rand(1, 3, 32, 32)
 
         self.fc_1 = nn.Sequential(
             nn.Linear(32 * 32 * 3, hidden_size),
@@ -127,8 +127,6 @@ class MLPCifar10(BaseModel):
 class CNNCifar10(BaseModel):
     def __init__(self):
         super().__init__()
-
-        self.example_input_array = torch.rand(1, 3, 32, 32)
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 16, 5, 1),
@@ -309,7 +307,7 @@ class ResCifar10(BaseModel):
             nn.Linear(in_block_channels * 8, in_block_channels * 8),
             nn.ReLU(),
             nn.Linear(in_block_channels * 8, num_classes),
-            nn.LogSoftmax()
+            nn.LogSoftmax(dim=1)
         )
 
     def forward(self, x):
