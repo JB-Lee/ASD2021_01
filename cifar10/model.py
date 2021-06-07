@@ -38,39 +38,39 @@ class BaseModel(pl.LightningModule):
 
 
 class MLPCifar10(BaseModel):
-    def __init__(self):
+    def __init__(self, hidden_size, hidden_cnt, dropout=0.3):
         super().__init__()
+
+        self.hidden_size = hidden_size
+        self.hidden_cnt = hidden_cnt
+        self.dropout = dropout
 
         self.example_input_array = torch.rand(1, 3, 32, 32)
 
-        self.fc1 = nn.Sequential(
-            nn.Linear(32 * 32 * 3, 32 * 32),
-            nn.GELU(),
-            nn.BatchNorm1d(32 * 32)
+        self.fc_1 = nn.Sequential(
+            nn.Linear(32 * 32 * 3, hidden_size),
+            nn.Hardswish(),
+            nn.BatchNorm1d(hidden_size)
         )
 
-        self.fc3 = nn.Sequential(
-            nn.Linear(32 * 32, 16 * 16),
-            nn.LeakyReLU(),
-            nn.Dropout(0.3)
-        )
-
-        self.fc_h = nn.Sequential(
-            nn.Linear(16 * 16, 8 * 8),
-            nn.LeakyReLU(),
-            nn.BatchNorm1d(8 * 8)
-        )
+        self.fc_h = nn.ModuleList([nn.Sequential(nn.Linear(hidden_size, hidden_size),
+                                                 nn.Hardswish(),
+                                                 nn.BatchNorm1d(hidden_size),
+                                                 nn.Dropout(dropout))
+                                   for x in range(hidden_cnt)])
 
         self.fc_o = nn.Sequential(
-            nn.Linear(8 * 8, 10),
+            nn.Linear(hidden_size, 10),
             nn.LogSoftmax(dim=1)
         )
 
     def forward(self, x):
         out = x.view(x.size(0), -1)
-        out = self.fc1(out)
-        out = self.fc3(out)
-        out = self.fc_h(out)
+        out = self.fc_1(out)
+
+        for layer in self.fc_h:
+            out = layer(out)
+
         out = self.fc_o(out)
         return out
 
