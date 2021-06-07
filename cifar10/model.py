@@ -239,14 +239,14 @@ class ResCifar10(BaseModel):
             out = self.relu(out)
             return out
 
-    def __init__(self, num_blocks, num_classes=10, in_channels=16, *args, **kwargs):
+    def __init__(self, num_blocks, num_classes=10, in_block_channels=16, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.in_channels = in_channels
+        self.in_block_channels = in_block_channels
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(self.in_channels),
+            nn.Conv2d(3, self.in_block_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(self.in_block_channels),
             nn.ReLU()
         )
 
@@ -254,20 +254,20 @@ class ResCifar10(BaseModel):
             strides = [stride] + [1] * (num_block - 1)
             layers = []
             for stride in strides:
-                layers.append(ResCifar10.Block(self.in_channels, out_channels, stride))
-                self.in_channels = out_channels * ResCifar10.Block.expansion
+                layers.append(ResCifar10.Block(self.in_block_channels, out_channels, stride))
+                self.in_block_channels = out_channels * ResCifar10.Block.expansion
             return nn.Sequential(*layers)
 
         # self.layers = [make_layer(64 * (2 ** i), block, 1 if i == 0 else 2) for i, block in enumerate(num_blocks)]
-        self.l1 = make_layer(in_channels, num_blocks[0], stride=1)
-        self.l2 = make_layer(in_channels * 2, num_blocks[1], stride=2)
-        self.l3 = make_layer(in_channels * 4, num_blocks[2], stride=2)
-        self.l4 = make_layer(in_channels * 8, num_blocks[3], stride=2)
+        self.l1 = make_layer(in_block_channels, num_blocks[0], stride=1)
+        self.l2 = make_layer(in_block_channels * 2, num_blocks[1], stride=2)
+        self.l3 = make_layer(in_block_channels * 4, num_blocks[2], stride=2)
+        self.l4 = make_layer(in_block_channels * 8, num_blocks[3], stride=2)
 
         self.projection = nn.Sequential(
-            nn.Linear(in_channels * 8, in_channels * 8),
+            nn.Linear(in_block_channels * 8, in_block_channels * 8),
             nn.ReLU(),
-            nn.Linear(in_channels * 8, num_classes),
+            nn.Linear(in_block_channels * 8, num_classes),
             nn.LogSoftmax()
         )
 
@@ -286,8 +286,8 @@ class ResCifar10(BaseModel):
 
 
 class ResV2Cifar10(ResCifar10):
-    def __init__(self, num_blocks, num_classes=10, in_channels=16, *args, **kwargs):
-        super().__init__(num_blocks, num_classes, in_channels, *args, **kwargs)
+    def __init__(self, num_blocks, num_classes=10, in_block_channels=16, *args, **kwargs):
+        super().__init__(num_blocks, num_classes, in_block_channels, *args, **kwargs)
 
         self.dropout = nn.Dropout2d(0.3)
 
