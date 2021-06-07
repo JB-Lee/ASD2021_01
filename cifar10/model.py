@@ -29,9 +29,21 @@ class BaseModel(pl.LightningModule):
         pred = torch.argmax(z, dim=1)
         acc = accuracy(pred, y)
 
+        logs = {
+            'train_loss': loss,
+            'train_acc': acc
+        }
+
+        batch_dict = {
+            'loss': loss,
+            'log': logs,
+            'correct': pred.eq(y).sum().item(),
+            'total': len(y)
+        }
+
         self.log('train_loss', loss, prog_bar=True)
         self.log('train_acc', acc, prog_bar=True)
-        return loss
+        return batch_dict
 
     def validation_step(self, val_batch, batch_idx):
         x, y = val_batch
@@ -41,8 +53,37 @@ class BaseModel(pl.LightningModule):
         pred = torch.argmax(z, dim=1)
         acc = accuracy(pred, y)
 
+        logs = {
+            'val_loss': loss,
+            'val_acc': acc
+        }
+
+        batch_dict = {
+            'loss': loss,
+            'log': logs,
+            'correct': pred.eq(y).sum().item(),
+            'total': len(y)
+        }
+
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_acc', acc, prog_bar=True)
+        return batch_dict
+
+    def training_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        correct = sum([x['correct'] for x in outputs])
+        total = sum([x['total'] for x in outputs])
+
+        self.logger.experiment.add_scalar('Loss/Train', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Accuracy/Train', correct / total, self.current_epoch)
+
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        correct = sum([x['correct'] for x in outputs])
+        total = sum([x['total'] for x in outputs])
+
+        self.logger.experiment.add_scalar('Loss/Validation', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Accuracy/Validation', correct / total, self.current_epoch)
 
 
 class MLPCifar10(BaseModel):
