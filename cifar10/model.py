@@ -43,8 +43,8 @@ class BaseModel(pl.LightningModule):
             'total': len(y)
         }
 
-        self.log('train_loss', loss, prog_bar=True)
-        self.log('train_acc', acc, prog_bar=True)
+        self.log('Step/Loss/Train', loss, prog_bar=True)
+        self.log('Step/Accuracy/Train', acc, prog_bar=True)
         return batch_dict
 
     def validation_step(self, val_batch, batch_idx):
@@ -67,8 +67,8 @@ class BaseModel(pl.LightningModule):
             'total': len(y)
         }
 
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_acc', acc, prog_bar=True)
+        self.log('Step/Loss/Validation', loss, prog_bar=True)
+        self.log('Step/Accuracy/Validation', acc, prog_bar=True)
         return batch_dict
 
     def training_epoch_end(self, outputs):
@@ -169,7 +169,7 @@ class CNNCifar10(BaseModel):
 
 
 class DCNNCifar10(BaseModel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dropout=0.1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.example_input_array = torch.rand(1, 3, 32, 32)
 
@@ -181,7 +181,7 @@ class DCNNCifar10(BaseModel):
 
         self.pooling1 = nn.Sequential(
             nn.MaxPool2d(2, 2),
-            nn.Dropout2d(0.1)
+            nn.Dropout2d(dropout)
         )
 
         self.conv2 = nn.Sequential(
@@ -198,7 +198,7 @@ class DCNNCifar10(BaseModel):
 
         self.pooling2 = nn.Sequential(
             nn.MaxPool2d(2, 2),
-            nn.Dropout2d(0.1)
+            nn.Dropout2d(dropout)
         )
 
         self.conv4 = nn.Sequential(
@@ -215,7 +215,7 @@ class DCNNCifar10(BaseModel):
 
         self.pooling3 = nn.Sequential(
             nn.MaxPool2d(2, 2),
-            nn.Dropout2d(0.1)
+            nn.Dropout2d(dropout)
         )
 
         self.conv6 = nn.Sequential(
@@ -325,10 +325,10 @@ class ResCifar10(BaseModel):
 
 
 class ResV2Cifar10(ResCifar10):
-    def __init__(self, num_blocks, num_classes=10, in_block_channels=16, *args, **kwargs):
-        super().__init__(num_blocks, num_classes, in_block_channels, *args, **kwargs)
+    def __init__(self, num_blocks, dropout=0.3, *args, **kwargs):
+        super().__init__(num_blocks, *args, **kwargs)
 
-        self.dropout = nn.Dropout2d(0.3)
+        self.dropout = nn.Dropout2d(dropout)
 
     def forward(self, x):
         out = self.conv1(x)
