@@ -186,11 +186,6 @@ class DCNNCifar10(BaseModel):
             nn.ReLU(inplace=True)
         )
 
-        self.pooling1 = nn.Sequential(
-            nn.MaxPool2d(2, 2),
-            nn.Dropout2d(dropout)
-        )
-
         self.conv2 = nn.Sequential(
             nn.Conv2d(16, 64, 3, 1, 1),
             nn.BatchNorm2d(64),
@@ -203,15 +198,15 @@ class DCNNCifar10(BaseModel):
             nn.ReLU(inplace=True)
         )
 
-        self.pooling2 = nn.Sequential(
-            nn.MaxPool2d(2, 2),
-            nn.Dropout2d(dropout)
-        )
-
         self.conv4 = nn.Sequential(
             nn.Conv2d(64, 64, 3, 1, 1),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)
+        )
+
+        self.pooling1 = nn.Sequential(
+            nn.MaxPool2d(2, 2),
+            nn.Dropout2d(dropout)
         )
 
         self.conv5 = nn.Sequential(
@@ -220,7 +215,7 @@ class DCNNCifar10(BaseModel):
             nn.ReLU(inplace=True)
         )
 
-        self.pooling3 = nn.Sequential(
+        self.pooling2 = nn.Sequential(
             nn.MaxPool2d(2, 2),
             nn.Dropout2d(dropout)
         )
@@ -229,6 +224,11 @@ class DCNNCifar10(BaseModel):
             nn.Conv2d(128, 128, 3, 1, 1),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True)
+        )
+
+        self.pooling3 = nn.Sequential(
+            nn.MaxPool2d(2, 2),
+            nn.Dropout2d(dropout)
         )
 
         self.conv7 = nn.Sequential(
