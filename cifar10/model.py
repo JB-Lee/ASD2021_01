@@ -178,7 +178,6 @@ class CNNCifar10(BaseModel):
 class DCNNCifar10(BaseModel):
     def __init__(self, dropout=0.1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.example_input_array = torch.rand(1, 3, 32, 32)
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 16, 3, 1, 1),
