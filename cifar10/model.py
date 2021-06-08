@@ -6,7 +6,7 @@ from torch.functional import F
 
 
 class BaseModel(pl.LightningModule):
-    def __init__(self, transform=None, learning_rate=1e-03, *args, **kwargs):
+    def __init__(self, transform=None, learning_rate=1e-03, weight_decay=0.001, t_max=10, eta_min=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.example_input_array = torch.rand(1, 3, 32, 32)
@@ -14,10 +14,13 @@ class BaseModel(pl.LightningModule):
         self.transform = transform
         self.criterion = nn.NLLLoss()
         self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.t_max = t_max
+        self.eta_min = eta_min
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=0.001)
-        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.t_max, eta_min=self.eta_min)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
     def training_step(self, train_batch, batch_idx):
