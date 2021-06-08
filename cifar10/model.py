@@ -80,6 +80,8 @@ class BaseModel(pl.LightningModule):
         self.logger.experiment.add_scalar('Loss/Train', avg_loss, self.current_epoch)
         self.logger.experiment.add_scalar('Accuracy/Train', correct / total, self.current_epoch)
 
+        self.tb_histogram_add()
+
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         correct = sum([x['correct'] for x in outputs])
@@ -87,6 +89,10 @@ class BaseModel(pl.LightningModule):
 
         self.logger.experiment.add_scalar('Loss/Validation', avg_loss, self.current_epoch)
         self.logger.experiment.add_scalar('Accuracy/Validation', correct / total, self.current_epoch)
+
+    def tb_histogram_add(self):
+        for name, params in self.named_parameters():
+            self.logger.experiment.add_histogram(name, params, self.current_epoch)
 
 
 class MLPCifar10(BaseModel):
