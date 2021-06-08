@@ -16,8 +16,9 @@ class BaseModel(pl.LightningModule):
         self.learning_rate = learning_rate
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=0.01)
-        return optimizer
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=0.001)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
@@ -43,8 +44,8 @@ class BaseModel(pl.LightningModule):
             'total': len(y)
         }
 
-        self.log('Step/Loss/Train', loss, prog_bar=True)
-        self.log('Step/Accuracy/Train', acc, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_acc', acc, prog_bar=True)
         return batch_dict
 
     def validation_step(self, val_batch, batch_idx):
@@ -67,8 +68,8 @@ class BaseModel(pl.LightningModule):
             'total': len(y)
         }
 
-        self.log('Step/Loss/Validation', loss, prog_bar=True)
-        self.log('Step/Accuracy/Validation', acc, prog_bar=True)
+        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_acc', acc, prog_bar=True)
         return batch_dict
 
     def training_epoch_end(self, outputs):
@@ -76,16 +77,16 @@ class BaseModel(pl.LightningModule):
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
 
-        self.logger.experiment.add_scalar('Epoch/Loss/Train', avg_loss, self.current_epoch)
-        self.logger.experiment.add_scalar('Epoch/Accuracy/Train', correct / total, self.current_epoch)
+        self.logger.experiment.add_scalar('Loss/Train', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Accuracy/Train', correct / total, self.current_epoch)
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
 
-        self.logger.experiment.add_scalar('Epoch/Loss/Validation', avg_loss, self.current_epoch)
-        self.logger.experiment.add_scalar('Epoch/Accuracy/Validation', correct / total, self.current_epoch)
+        self.logger.experiment.add_scalar('Loss/Validation', avg_loss, self.current_epoch)
+        self.logger.experiment.add_scalar('Accuracy/Validation', correct / total, self.current_epoch)
 
 
 class MLPCifar10(BaseModel):
