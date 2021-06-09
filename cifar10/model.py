@@ -1,5 +1,9 @@
+import matplotlib.pyplot as plt
+import pandas as pd
 import pytorch_lightning as pl
+import seaborn as sn
 import torch.optim
+import torchmetrics.functional
 from pytorch_lightning.metrics.functional import accuracy
 from torch import nn
 from torch.functional import F
@@ -10,6 +14,11 @@ class BaseModel(pl.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.example_input_array = torch.rand(1, 3, 32, 32)
+
+        self.train_log = []
+        self.val_log = []
+        self.best_epoch = 0
+        self.best_val = 10.0
 
         self.transform = transform
         self.criterion = nn.NLLLoss()
@@ -68,7 +77,9 @@ class BaseModel(pl.LightningModule):
             'loss': loss,
             'log': logs,
             'correct': pred.eq(y).sum().item(),
-            'total': len(y)
+            'total': len(y),
+            'preds': z,
+            'target': y
         }
 
         self.log('val_loss', loss, prog_bar=True)
@@ -76,22 +87,52 @@ class BaseModel(pl.LightningModule):
         return batch_dict
 
     def training_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_acc = correct / total
+
+        val_loss, val_acc = self.val_log[self.current_epoch]
+
+        if val_loss < self.best_val:
+            self.best_val = val_loss
+            self.best_epoch = self.current_epoch
+
+            self.log('best/val_loss', val_loss, on_epoch=True, prog_bar=True)
+            self.log('best/val_acc', val_acc, on_epoch=True, prog_bar=True)
+
+            self.log('best/train_loss', avg_loss, on_epoch=True, prog_bar=True)
+            self.log('best/train_acc', avg_acc, on_epoch=True, prog_bar=True)
+
+            self.log('best/epoch', self.current_epoch, on_epoch=True, prog_bar=True)
 
         self.logger.experiment.add_scalar('Loss/Train', avg_loss, self.current_epoch)
-        self.logger.experiment.add_scalar('Accuracy/Train', correct / total, self.current_epoch)
+        self.logger.experiment.add_scalar('Accuracy/Train', avg_acc, self.current_epoch)
 
-        self.tb_histogram_add()
+        # self.tb_histogram_add()
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         correct = sum([x['correct'] for x in outputs])
         total = sum([x['total'] for x in outputs])
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_acc = correct / total
+
+        preds = torch.exp(torch.cat([x['preds'] for x in outputs])).cpu()
+        targets = torch.cat([x['target'] for x in outputs]).cpu()
+
+        # confusion_matrix = pl.metrics.functional.confusion_matrix(preds, targets, num_classes=10)
+        confusion_matrix = torchmetrics.functional.confusion_matrix(preds, targets, num_classes=10, normalize='true')
+        df_cm = pd.DataFrame(confusion_matrix.numpy(), index=range(10), columns=range(10))
+        plt.figure(figsize=(10, 7))
+        fg = sn.heatmap(df_cm, vmin=0, vmax=1, annot=True).get_figure()
+        plt.close(fg)
+
+        self.val_log.append((avg_loss, avg_acc))
 
         self.logger.experiment.add_scalar('Loss/Validation', avg_loss, self.current_epoch)
         self.logger.experiment.add_scalar('Accuracy/Validation', correct / total, self.current_epoch)
+
+        self.logger.experiment.add_figure("Confusion matrix", fg, self.current_epoch)
 
     def tb_histogram_add(self):
         for name, params in self.named_parameters():
